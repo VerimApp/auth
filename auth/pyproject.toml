@@ -1,0 +1,84 @@
+[tool.poetry]
+name = "Verim-Auth"
+version = "0.1.0"
+description = "Verim Auth Microservice"
+authors = ["Matvey Ivanov"]
+
+[tool.poetry.dependencies]
+python = "3.11.5"
+fastapi = "0.103.1"
+uvicorn = "0.23.2"
+psycopg2-binary = "2.9.7"
+SQLAlchemy = "2.0.20"
+redis = "5.0.0"
+PyJWT = "2.8.0"
+amqp = "5.1.1"
+PyAMQP = "0.1.0.7"
+celery = "5.3.1"
+dependency-injector = "4.41.0"
+pydantic = "2.3.0"
+alembic = "1.12.0"
+pytz = "2023.3.post1"
+fastapi-versioning = "0.10.0"
+email-validator = "2.0.0.post2"
+bcrypt = "4.0.1"
+fastapi-mail = "1.4.1"
+asgiref = "3.7.2"
+pytest = "7.4.2"
+mock = "5.1.0"
+grpcio-tools = "1.60.0"
+pytest-cov = "4.1.0"
+flake8 = "7.0.0"
+watchdog = {version = "3.0.0", extras = ["watchmedo"]}
+pytest-mock = "3.12.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+addopts = "--show-capture=no"
+
+[tool.coverage.run]
+include = [
+]
+
+[tool.coverage.report]
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+]
+omit = [
+    "migrations/*",
+    "grpc_services/*",
+    "tests/*",
+    "config/*",
+    "*pb2*",
+    "*grpc_typed.py",
+    "main.py",
+    "utils/exceptions.py",
+    "utils/logging.py",
+    "utils/pygettext.py",
+    "utils/repo.py",
+    "utils/schemas.py",
+    "utils/test.py",
+    "utils/types.py",
+]
+ignore_errors = true
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package publisher;
+
+import "auth.proto";
+
+
+message CreatePublicationRequest {
+    int32 user_id = 1;
+    string url = 2;
+}
+
+
+message PublicationResponse {
+    int32 id = 1;
+    string url = 2;
+    string type = 3;
+    int32 believed_count = 4;
+    int32 disbelieved_count = 5;
+    string created_at = 6;
+    bool believed = 7;
+    optional string detail = 8;
+}
+
+
+message VoteRequest {
+    int32 user_id = 1;
+    int32 publication_id = 2;
+    bool believed = 3;
+}
+
+
+message PaginationRequest {
+    int32 user_id = 1;
+    int32 page = 2;
+    int32 size = 3;
+}
+
+
+message PublicationsSelectionResponse {
+    repeated PublicationResponse items = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 size = 4;
+    int32 pages = 5;
+    optional string detail = 6;
+}
+
+
+service Publisher {
+    rpc publications_create (CreatePublicationRequest) returns (PublicationResponse);
+    rpc publications_selection (PaginationRequest) returns (PublicationsSelectionResponse);
+    rpc publications_vote (VoteRequest) returns (auth.Empty);
+}

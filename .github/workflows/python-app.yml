@@ -1,0 +1,62 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python application
+
+on:
+  push:
+    branches: [ "dev" ]
+  pull_request:
+    branches: [ "dev" ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+    - uses: actions/checkout@v3
+    - name: Create env file
+      run: |
+        echo "${{ vars.ENV_FILE }}" > .env
+    - name: Build containers
+      run: |
+        docker-compose up -d auth
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        docker exec dev-verim-auth python -m flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        docker exec dev-verim-auth python -m flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+    - name: Test with pytest
+      run: |
+        docker exec dev-verim-auth python -m pytest tests --doctest-modules --junitxml=junit/auth-test-results.xml --cov=. | tee auth-test-results.txt
+        docker cp dev-verim-auth:/microservice/junit/auth-test-results.xml .
+    - name: Pytest auth coverage comment
+      id: authCoverageComment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./auth-test-results.txt
+        hide-badge: false
+        hide-report: false
+        create-new-comment: true
+        hide-comment: false
+        report-only-changed-files: true
+        remove-link-from-badge: true
+        junitxml-path: ./auth-test-results.xml
+
+    # Only on dev merge!!!
+    - name: Pytest auth coverage badge
+      if: ${{ github.ref == 'refs/heads/dev' }}
+      uses: schneegans/dynamic-badges-action@v1.6.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 757112fa1eaaf7bee58f771e2238c394
+        filename: VerimDevAuthCoverage.json
+        label: Auth Coverage
+        message: ${{ steps.authCoverageComment.outputs.coverage }}
+        color: ${{ steps.authCoverageComment.outputs.color }}
+        namedLogo: python

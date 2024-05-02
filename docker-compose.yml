@@ -1,0 +1,64 @@
+version: "3.10"
+
+networks:
+  verim_network:
+    name: verim_network
+  verim_auth_network:
+    name: verim_auth_network
+
+services:
+  db:
+    image: postgres:15.4
+    container_name: ${CONTAINER_PREFIX}-db
+    volumes:
+      - verim_auth_db_data:/var/lib/postgresql/data
+      - ${MAIN_PATH}/configs/postgres:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - verim_network
+      - verim_auth_network
+    ports:
+      - "127.0.0.1:7433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  auth:
+    container_name: ${CONTAINER_PREFIX}-auth
+    build:
+      context: .
+      dockerfile: ./auth/Dockerfile
+    working_dir: ${DEFAULT_SERVICE_DIR}
+    env_file:
+      - .env
+    volumes:
+      # app dir
+      - ./auth/:${DEFAULT_SERVICE_DIR}
+      # web stuff
+      - ${STATIC_PATH}:/static
+      - ${MEDIA_PATH}:/media
+      - ${LOG_PATH}:/logs
+      # protobufs
+      - ./protobufs/compiled/auth_pb2_grpc.py:${DEFAULT_SERVICE_DIR}/auth_pb2_grpc.py
+      - ./protobufs/compiled/auth_pb2.py:${DEFAULT_SERVICE_DIR}/auth_pb2.py
+      - ./protobufs/compiled/auth_grpc_typed.py:${DEFAULT_SERVICE_DIR}/auth_grpc_typed.py
+      - ./protobufs/compiled/publisher_pb2_grpc.py:${DEFAULT_SERVICE_DIR}/publisher_pb2_grpc.py
+      - ./protobufs/compiled/publisher_pb2.py:${DEFAULT_SERVICE_DIR}/publisher_pb2.py
+      - ./protobufs/compiled/publisher_grpc_typed.py:${DEFAULT_SERVICE_DIR}/publisher_grpc_typed.py
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+    networks:
+      - verim_network
+      - verim_auth_network
+    restart: always
+
+volumes:
+  verim_auth_db_data:
+    name: verim_auth_db_data

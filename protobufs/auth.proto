@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package auth;
+
+
+message Empty {
+    optional string detail = 1;
+}
+
+
+message AuthRequest {
+    string token = 1;
+}
+
+
+message User {
+    int32 id = 1;
+}
+
+
+message AuthResponse {
+    User user = 1;
+    string error_message = 2;
+}
+
+
+message JWTTokens {
+    string access = 1;
+    string refresh = 2;
+    optional string detail = 3;
+}
+
+
+message CodeSentResponse {
+    string email = 1;
+    string message = 2;
+    optional string detail = 3;
+}
+
+
+message RefreshTokensRequest {
+    string refresh = 1;
+}
+
+
+message LoginRequest {
+    string login = 1;
+    string password = 2;
+}
+
+
+message ChangePasswordRequest {
+    int32 user_id = 1;
+    string current_password = 2;
+    string new_password = 3;
+    string re_new_password = 4;
+}
+
+
+message ResetPasswordRequest {
+    string email = 1;
+}
+
+
+message ResetPasswordConfirmRequest {
+    string email = 1;
+    string code = 2;
+    string new_password = 3;
+    string re_new_password = 4;
+}
+
+
+message RegisterRequest {
+    string email = 1;
+    string username = 2;
+    string password = 3;
+    string re_password = 4;
+}
+
+
+message RepeatRegisterRequest {
+    string email = 1;
+}
+
+
+message ConfirmRegisterRequest {
+    string email = 1;
+    string code = 2;
+}
+
+
+message CheckEmailConfirmedRequest {
+    int32 user_id = 1;
+}
+
+
+message CheckEmailConfirmedResponse {
+    optional bool confirmed = 1;
+    optional string detail = 2;
+}
+
+
+service Auth {
+    rpc auth (AuthRequest) returns (AuthResponse);
+    rpc jwt_refresh (RefreshTokensRequest) returns (JWTTokens);
+    rpc login (LoginRequest) returns (JWTTokens);
+    rpc password_change (ChangePasswordRequest) returns (Empty);
+    rpc password_reset (ResetPasswordRequest) returns (CodeSentResponse);
+    rpc password_reset_confirm (ResetPasswordConfirmRequest) returns (Empty);
+    rpc register (RegisterRequest) returns (CodeSentResponse);
+    rpc register_repeat (RepeatRegisterRequest) returns (CodeSentResponse);
+    rpc register_confirm (ConfirmRegisterRequest) returns (JWTTokens);
+    rpc check_email_confirmed (CheckEmailConfirmedRequest) returns (CheckEmailConfirmedResponse);
+}

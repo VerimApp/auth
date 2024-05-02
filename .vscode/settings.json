@@ -1,0 +1,11 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+    },
+    "black-formatter.args": [
+        "--preview",
+        "--enable-unstable-feature",
+        "string_processing"
+    ]
+}
