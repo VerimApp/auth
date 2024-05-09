@@ -12,17 +12,17 @@ services:
     container_name: ${CONTAINER_PREFIX}-db
     volumes:
       - verim_auth_db_data:/var/lib/postgresql/data
-      - ${MAIN_PATH}/configs/postgres:/docker-entrypoint-initdb.d
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     networks:
       - verim_network
       - verim_auth_network
     ports:
       - "127.0.0.1:7433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -p 5432"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB -p 5432"]
       interval: 5s
       timeout: 5s
       retries: 5
