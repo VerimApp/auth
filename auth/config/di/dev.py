@@ -1,12 +1,11 @@
 from dependency_injector import containers, providers
-from dependency_injector.wiring import Closing
 from celery import Celery
 
 from protobufs.compiled import publisher_pb2_grpc
 from protobufs.compiled.publisher_grpc_typed import PublisherStub
 from config import settings
 from config.celery import app as _celery_app
-from config.db import SessionFactory
+from config.db import Database
 from config.mail import SendEmail
 from config.grpc import GRPCConnection
 from repo import UserRepo, CodeRepo
@@ -54,14 +53,14 @@ class Container(containers.DeclarativeContainer):
     )
     publisher_grpc = providers.Singleton(PublisherStub, connection=_publisher_grpc)
 
-    db_session_factory = providers.Resource(
-        SessionFactory, db_url=settings.DATABASE_URL
+    db = providers.Resource(
+        Database, db_url=settings.DATABASE_URL
     )
 
     send_email = providers.Singleton(SendEmail, celery_app=celery_app)
 
-    user_repo = providers.Factory(UserRepo, session_factory=db_session_factory)
-    _code_repo = providers.Factory(CodeRepo, session_factory=db_session_factory)
+    user_repo = providers.Factory(UserRepo, session_factory=db.provided.session)
+    _code_repo = providers.Factory(CodeRepo, session_factory=db.provided.session)
 
     authenticate = providers.Singleton(Authenticate, repo=user_repo)
 

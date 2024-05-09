@@ -1,5 +1,6 @@
 import logging
-from typing import Generator
+from contextlib import contextmanager, AbstractContextManager
+from typing import Callable
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
@@ -14,7 +15,7 @@ logger = logging.getLogger("orm")
 Base = declarative_base()
 
 
-class SessionFactory:
+class Database:
     def __init__(self, db_url: str) -> None:
         self._engine = create_engine(db_url, echo=True)
         self._session_factory = scoped_session(
@@ -25,22 +26,20 @@ class SessionFactory:
             ),
         )
 
-    def __call__(self) -> Session:
-        session = self._session_factory()
+    def create_database(self) -> None:
+        Base.metadata.create_all(self._engine)
+
+    @contextmanager
+    def session(self) -> Callable[..., AbstractContextManager[Session]]:
+        session: Session = self._session_factory()
         try:
-            print("YIELD")
             yield session
         except Exception as e:
-            print("ERROR")
             logger.error(
                 f"Session rollback because of exception - {str(e)}", exc_info=e
             )
             session.rollback()
             raise
-        else:
-            print("COMMIT")
-            session.commit()
         finally:
-            print("CLOSE")
             session.expunge_all()
             session.close()

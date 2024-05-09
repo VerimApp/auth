@@ -9,7 +9,8 @@ networks:
 services:
   db:
     image: postgres:15.4
-    container_name: ${CONTAINER_PREFIX}-db
+    container_name: ${CONTAINER_PREFIX}-auth-db
+    hostname: auth-db
     volumes:
       - verim_auth_db_data:/var/lib/postgresql/data
     environment:

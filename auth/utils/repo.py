@@ -1,15 +1,14 @@
 from abc import ABC
+from contextlib import AbstractContextManager
 from typing import Callable
 from dataclasses import fields
 
-from fastapi import Depends
 from sqlalchemy.orm import Session
 
 
 class IRepo(ABC):
-    def __init__(self, session_factory: Callable[[], Session]) -> None:
+    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:
         self.session_factory = session_factory
-        self.session = Depends(session_factory)
 
 
 def pagination_transformer(schema: Callable) -> Callable:

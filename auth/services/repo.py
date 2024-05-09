@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Dict
 
-from sqlalchemy.orm import Query
+from sqlalchemy.orm import Query, Session
 
 from schemas import RegistrationSchema
 from utils.types import UserType
@@ -10,7 +10,7 @@ from utils.repo import IRepo
 
 class IUserRepo(IRepo):
     @abstractmethod
-    def all(self, *, include_not_confirmed_email: bool = False) -> Query: ...
+    def all(self, session: Session | None = None, *, include_not_confirmed_email: bool = False) -> Query: ...
 
     @abstractmethod
     def create(self, entry: RegistrationSchema) -> UserType: ...

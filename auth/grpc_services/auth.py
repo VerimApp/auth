@@ -122,10 +122,7 @@ class GRPCAuth(auth_pb2_grpc.AuthServicer):
         request,
         context,
         service: IRegisterUser = Provide[Container.register_user],
-        user_repo=Closing[Provide[Container.user_repo]],
     ):
-        print(user_repo.email_exists("asd"))
-        return CodeSentResponse(email=request.email, message="MESSAGE")
         response = service(
             entry=RegistrationSchema(
                 email=request.email,
