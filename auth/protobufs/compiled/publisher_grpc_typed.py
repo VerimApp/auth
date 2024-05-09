@@ -5,7 +5,7 @@ from typing import List
 from config.grpc import GRPCConnection
 from utils.decorators import handle_grpc_response_error
 
-from auth_grpc_typed import Empty
+from protobufs.compiled.auth_grpc_typed import Empty
 
 
 @dataclass
@@ -73,7 +73,9 @@ class PublisherStub(IPublisherStub):
     async def publications_create(
         self, request: CreatePublicationRequest
     ) -> PublicationResponse:
-        from publisher_pb2 import CreatePublicationRequest as _CreatePublicationRequest
+        from protobufs.compiled.publisher_pb2 import (
+            CreatePublicationRequest as _CreatePublicationRequest,
+        )
 
         response = await self.connection.stub.publications_create(
             _CreatePublicationRequest(**asdict(request))
@@ -93,7 +95,9 @@ class PublisherStub(IPublisherStub):
     async def publications_selection(
         self, request: PaginationRequest
     ) -> PublicationsSelectionResponse:
-        from publisher_pb2 import PaginationRequest as _PaginationRequest
+        from protobufs.compiled.publisher_pb2 import (
+            PaginationRequest as _PaginationRequest,
+        )
 
         response = await self.connection.stub.publications_selection(
             _PaginationRequest(**asdict(request))
@@ -121,7 +125,7 @@ class PublisherStub(IPublisherStub):
 
     @handle_grpc_response_error
     async def publications_vote(self, request: VoteRequest) -> Empty:
-        from publisher_pb2 import VoteRequest as _VoteRequest
+        from protobufs.compiled.publisher_pb2 import VoteRequest as _VoteRequest
 
         response = await self.connection.stub.publications_vote(
             _VoteRequest(**asdict(request))

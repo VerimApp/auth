@@ -26,6 +26,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   auth:
     container_name: ${CONTAINER_PREFIX}-auth
@@ -42,13 +43,6 @@ services:
       - ${STATIC_PATH}:/static
       - ${MEDIA_PATH}:/media
       - ${LOG_PATH}:/logs
-      # protobufs
-      - ./protobufs/compiled/auth_pb2_grpc.py:${DEFAULT_SERVICE_DIR}/auth_pb2_grpc.py
-      - ./protobufs/compiled/auth_pb2.py:${DEFAULT_SERVICE_DIR}/auth_pb2.py
-      - ./protobufs/compiled/auth_grpc_typed.py:${DEFAULT_SERVICE_DIR}/auth_grpc_typed.py
-      - ./protobufs/compiled/publisher_pb2_grpc.py:${DEFAULT_SERVICE_DIR}/publisher_pb2_grpc.py
-      - ./protobufs/compiled/publisher_pb2.py:${DEFAULT_SERVICE_DIR}/publisher_pb2.py
-      - ./protobufs/compiled/publisher_grpc_typed.py:${DEFAULT_SERVICE_DIR}/publisher_grpc_typed.py
     depends_on:
       db:
         condition: service_healthy
@@ -57,7 +51,7 @@ services:
     networks:
       - verim_network
       - verim_auth_network
-    restart: always
+    restart: unless-stopped
 
 volumes:
   verim_auth_db_data:

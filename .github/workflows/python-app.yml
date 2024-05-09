@@ -5,9 +5,9 @@ name: Python application
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "develop" ]
   pull_request:
-    branches: [ "dev" ]
+    branches: [ "develop" ]
 
 permissions:
   contents: write
@@ -16,12 +16,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: develop
     steps:
     - uses: actions/checkout@v3
     - name: Create env file
       run: |
-        echo "${{ vars.ENV_FILE }}" > .env
+        echo "${{ vars.AUTH_ENV_FILE }}" > .env
     - name: Build containers
       run: |
         docker-compose up -d auth
@@ -48,9 +48,9 @@ jobs:
         remove-link-from-badge: true
         junitxml-path: ./auth-test-results.xml
 
-    # Only on dev merge!!!
+    # Only on develop merge!!!
     - name: Pytest auth coverage badge
-      if: ${{ github.ref == 'refs/heads/dev' }}
+      if: ${{ github.ref == 'refs/heads/develop' }}
       uses: schneegans/dynamic-badges-action@v1.6.0
       with:
         auth: ${{ secrets.GIST_SECRET }}

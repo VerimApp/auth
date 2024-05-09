@@ -2,8 +2,8 @@ from dependency_injector import containers, providers
 from dependency_injector.wiring import Closing
 from celery import Celery
 
-import publisher_pb2_grpc
-from publisher_grpc_typed import PublisherStub
+from protobufs.compiled import publisher_pb2_grpc
+from protobufs.compiled.publisher_grpc_typed import PublisherStub
 from config import settings
 from config.celery import app as _celery_app
 from config.db import SessionFactory

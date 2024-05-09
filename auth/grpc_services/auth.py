@@ -1,7 +1,7 @@
 from dependency_injector.wiring import Closing, Provide, inject
 
-import auth_pb2_grpc
-from auth_pb2 import (
+from protobufs.compiled import auth_pb2_grpc
+from protobufs.compiled.auth_pb2 import (
     AuthResponse,
     User,
     Empty,
