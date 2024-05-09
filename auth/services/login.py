@@ -12,7 +12,7 @@ from utils.shortcuts import get_object_or_404
 
 class ILoginUser(ABC):
     @abstractmethod
-    def __call__(self, entry: LoginSchema) -> JWTTokensSchema: ...
+    async def __call__(self, entry: LoginSchema) -> JWTTokensSchema: ...
 
 
 class LoginUser(ILoginUser):
@@ -26,13 +26,15 @@ class LoginUser(ILoginUser):
         self.check_password = check_password
         self.repo = repo
 
-    def __call__(self, entry: LoginSchema) -> JWTTokensSchema:
-        user = self._get_user_by_login(entry.login)
+    async def __call__(self, entry: LoginSchema) -> JWTTokensSchema:
+        user = await self._get_user_by_login(entry.login)
         self._check_password(user, entry.password)
         return self._make_tokens(user)
 
-    def _get_user_by_login(self, login: str) -> UserType:
-        return get_object_or_404(self.repo.get_by_login(login), msg="User not found.")
+    async def _get_user_by_login(self, login: str) -> UserType:
+        return get_object_or_404(
+            await self.repo.get_by_login(login), msg="User not found."
+        )
 
     def _check_password(self, user: UserType, password: str) -> None:
         if not self.check_password(password, user.password):

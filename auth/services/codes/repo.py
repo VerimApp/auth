@@ -1,13 +1,14 @@
 from abc import abstractmethod
 
-from .types import CodeType, CodeTypeEnum
+from .types import CodeTypeEnum
 from ..entries import CreateCodeEntry
+from models.codes import Code
 from utils.repo import IRepo
 
 
 class ICodeRepo(IRepo):
     @abstractmethod
-    def create(self, entry: CreateCodeEntry) -> CodeType: ...
+    async def create(self, entry: CreateCodeEntry) -> Code: ...
 
     @abstractmethod
-    def get_last(self, user_id: int, type: CodeTypeEnum) -> CodeType | None: ...
+    async def get_last(self, user_id: int, type: CodeTypeEnum) -> Code | None: ...

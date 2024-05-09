@@ -18,17 +18,19 @@ logger = logging.getLogger("auth")
 
 class IAuthenticate(ABC):
     @abstractmethod
-    def __call__(self, token: str | bytes, *, access: bool = True) -> UserType: ...
+    async def __call__(
+        self, token: str | bytes, *, access: bool = True
+    ) -> UserType: ...
 
 
 class Authenticate(IAuthenticate):
     def __init__(self, repo: IUserRepo):
         self.repo = repo
 
-    def __call__(self, token: str | bytes, *, access: bool = True) -> UserType:
+    async def __call__(self, token: str | bytes, *, access: bool = True) -> UserType:
         payload = self._decode_payload(token, access)
         payload = self._payload_to_dataclass(payload)
-        user = self._get_user(payload.user)
+        user = await self._get_user(payload.user)
         self._check_tokens_revoked(user, payload)
         self._check_user_active(user)
         return user
@@ -54,8 +56,8 @@ class Authenticate(IAuthenticate):
             )
             raise Custom401Exception(_("Token is not correct."))
 
-    def _get_user(self, user_id: int) -> UserType:
-        user: UserType = self.repo.get_by_id(user_id)
+    async def _get_user(self, user_id: int) -> UserType:
+        user: UserType = await self.repo.get_by_id(user_id)
         if not user:
             raise Custom401Exception(_("Token is not correct."))
         return user

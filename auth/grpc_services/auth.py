@@ -36,47 +36,48 @@ from utils.exceptions import CustomException
 
 class GRPCAuth(auth_pb2_grpc.AuthServicer):
     @inject
-    def auth(
+    async def auth(
         self, request, context, service: IAuthenticate = Provide[Container.authenticate]
     ):
+        user = await service(token=request.token)
         try:
-            return AuthResponse(user=User(id=service(token=request.token).id))
+            return AuthResponse(user=User(id=user.id))
         except CustomException as e:
             return AuthResponse(user=User(id=-1), error_message=str(e))
 
     @handle_grpc_request_error(JWTTokens)
     @inject
-    def jwt_refresh(
+    async def jwt_refresh(
         self,
         request,
         context,
         service: IRefreshJWTTokens = Provide[Container.refresh_jwt_tokens],
     ):
-        tokens = service(entry=RefreshTokensSchema(refresh=request.refresh))
+        tokens = await service(entry=RefreshTokensSchema(refresh=request.refresh))
         return JWTTokens(access=tokens.access, refresh=tokens.refresh)
 
     @handle_grpc_request_error(JWTTokens)
     @inject
-    def login(
+    async def login(
         self,
         request,
         context,
         service: ILoginUser = Provide[Container.login_user],
     ):
-        tokens = service(
+        tokens = await service(
             entry=LoginSchema(login=request.login, password=request.password)
         )
         return JWTTokens(access=tokens.access, refresh=tokens.refresh)
 
     @handle_grpc_request_error(Empty)
     @inject
-    def password_change(
+    async def password_change(
         self,
         request,
         context,
         service: IChangePassword = Provide[Container.change_password],
     ):
-        service(
+        await service(
             user_id=request.user_id,
             entry=ChangePasswordSchema(
                 current_password=request.current_password,
@@ -88,24 +89,24 @@ class GRPCAuth(auth_pb2_grpc.AuthServicer):
 
     @handle_grpc_request_error(CodeSentResponse)
     @inject
-    def password_reset(
+    async def password_reset(
         self,
         request,
         context,
         service: IResetPassword = Provide[Container.reset_password],
     ):
-        response = service(entry=ResetPasswordSchema(email=request.email))
+        response = await service(entry=ResetPasswordSchema(email=request.email))
         return CodeSentResponse(email=response.email, message=response.message)
 
     @handle_grpc_request_error(Empty)
     @inject
-    def password_reset_confirm(
+    async def password_reset_confirm(
         self,
         request,
         context,
         service: IConfirmResetPassword = Provide[Container.confirm_reset_password],
     ):
-        service(
+        await service(
             entry=ResetPasswordConfirmSchema(
                 email=request.email,
                 code=request.code,
@@ -117,13 +118,13 @@ class GRPCAuth(auth_pb2_grpc.AuthServicer):
 
     @handle_grpc_request_error(CodeSentResponse)
     @inject
-    def register(
+    async def register(
         self,
         request,
         context,
         service: IRegisterUser = Provide[Container.register_user],
     ):
-        response = service(
+        response = await service(
             entry=RegistrationSchema(
                 email=request.email,
                 username=request.username,
@@ -135,34 +136,38 @@ class GRPCAuth(auth_pb2_grpc.AuthServicer):
 
     @handle_grpc_request_error(CodeSentResponse)
     @inject
-    def register_repeat(
+    async def register_repeat(
         self,
         request,
         context,
         service: IRepeatRegistrationCode = Provide[Container.repeat_registration_code],
     ):
-        response = service(entry=RepeatRegistrationCodeSchema(email=request.email))
+        response = await service(
+            entry=RepeatRegistrationCodeSchema(email=request.email)
+        )
         return CodeSentResponse(email=response.email, message=response.message)
 
     @handle_grpc_request_error(JWTTokens)
     @inject
-    def register_confirm(
+    async def register_confirm(
         self,
         request,
         context,
         service: IConfirmRegistration = Provide[Container.confirm_registration],
     ):
-        tokens = service(
+        tokens = await service(
             entry=ConfirmRegistrationSchema(email=request.email, code=request.code)
         )
         return JWTTokens(access=tokens.access, refresh=tokens.refresh)
 
     @handle_grpc_request_error(CheckEmailConfirmedResponse)
     @inject
-    def check_email_confirmed(
+    async def check_email_confirmed(
         self,
         request,
         context,
         service: ICheckRegistration = Provide[Container.check_registration],
     ):
-        return CheckEmailConfirmedResponse(confirmed=service(user_id=request.user_id))
+        return CheckEmailConfirmedResponse(
+            confirmed=await service(user_id=request.user_id)
+        )

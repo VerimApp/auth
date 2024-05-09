@@ -7,16 +7,15 @@ from utils.time import get_current_time
 
 class IRevokeJWTTokens(ABC):
     @abstractmethod
-    def __call__(self, user: UserType) -> None:
-        ...
+    async def __call__(self, user: UserType) -> None: ...
 
 
 class RevokeJWTTokens(IRevokeJWTTokens):
     def __init__(self, repo: IUserRepo) -> None:
         self.repo = repo
 
-    def __call__(self, user: UserType) -> None:
-        self._update_revokation_time(user)
+    async def __call__(self, user: UserType) -> None:
+        await self._update_revokation_time(user)
 
-    def _update_revokation_time(self, user: UserType) -> None:
-        self.repo.update(user, {"tokens_revoked_at": get_current_time()})
+    async def _update_revokation_time(self, user: UserType) -> None:
+        await self.repo.update(user, {"tokens_revoked_at": get_current_time()})

@@ -15,7 +15,7 @@ from utils.random import get_random_string
 
 class ICreateCode(ABC):
     @abstractmethod
-    def __call__(
+    async def __call__(
         self, user: UserType, type: CodeTypeEnum, *, send: bool = True
     ) -> str | CodeSentSchema: ...
 
@@ -30,17 +30,17 @@ class CreateCode(ICreateCode):
         self.send_code = send_code
         self.repo = repo
 
-    def __call__(
+    async def __call__(
         self, user: UserType, type: CodeTypeEnum, *, send: bool = True
     ) -> str | CodeSentSchema:
-        self._check_has_active(user, type)
-        code = self._create_code(user, type)
+        await self._check_has_active(user, type)
+        code = await self._create_code(user, type)
         if send:
             return self._send_code(user.email, code)
         return code.code
 
-    def _check_has_active(self, user: UserType, type: CodeTypeEnum) -> None:
-        last_code = self.repo.get_last(user.id, type)
+    async def _check_has_active(self, user: UserType, type: CodeTypeEnum) -> None:
+        last_code = await self.repo.get_last(user.id, type)
         if not last_code:
             return
 
@@ -51,8 +51,8 @@ class CreateCode(ICreateCode):
                 % {"seconds": self.code_duration_map[type] - seconds_diff}
             )
 
-    def _create_code(self, user: UserType, type: CodeTypeEnum) -> CodeType:
-        return self.repo.create(
+    async def _create_code(self, user: UserType, type: CodeTypeEnum) -> CodeType:
+        return await self.repo.create(
             entry=CreateCodeEntry(
                 user_id=user.id,
                 code=get_random_string(

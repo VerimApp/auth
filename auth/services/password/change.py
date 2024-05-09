@@ -14,7 +14,7 @@ from config.i18n import _
 
 class IChangePassword(ABC):
     @abstractmethod
-    def __call__(self, user_id: int, entry: ChangePasswordSchema) -> None: ...
+    async def __call__(self, user_id: int, entry: ChangePasswordSchema) -> None: ...
 
 
 class ChangePassword(IChangePassword):
@@ -32,15 +32,15 @@ class ChangePassword(IChangePassword):
         self.revoke_jwt_tokens = revoke_jwt_tokens
         self.repo = repo
 
-    def __call__(self, user_id: int, entry: ChangePasswordSchema) -> None:
-        user = self._get_user(user_id)
+    async def __call__(self, user_id: int, entry: ChangePasswordSchema) -> None:
+        user = await self._get_user(user_id)
         self._chech_current_password(user, entry.current_password)
         self._validate_new_password(entry)
-        self._set_password(user, entry.new_password)
+        await self._set_password(user, entry.new_password)
         self._revoke_jwt_tokens(user)
 
-    def _get_user(self, user_id: int) -> UserType:
-        return get_object_or_404(self.repo.get_by_id(id=user_id))
+    async def _get_user(self, user_id: int) -> UserType:
+        return get_object_or_404(await self.repo.get_by_id(id=user_id))
 
     def _chech_current_password(self, user: UserType, password: str) -> None:
         if not self.check_password(password, user.password):
@@ -55,8 +55,8 @@ class ChangePassword(IChangePassword):
             raise Custom400Exception(_("Password mismatch."))
         self.validate_password(entry.new_password, raise_exception=True)
 
-    def _set_password(self, user: UserType, password: str) -> None:
-        self.repo.update(user, {"password": self.hash_password(password)})
+    async def _set_password(self, user: UserType, password: str) -> None:
+        await self.repo.update(user, {"password": self.hash_password(password)})
 
-    def _revoke_jwt_tokens(self, user: UserType) -> None:
-        self.revoke_jwt_tokens(user)
+    async def _revoke_jwt_tokens(self, user: UserType) -> None:
+        await self.revoke_jwt_tokens(user)

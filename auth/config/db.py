@@ -1,13 +1,16 @@
 import logging
-from contextlib import contextmanager, AbstractContextManager
+import asyncio
+from contextlib import asynccontextmanager, AbstractAsyncContextManager
 from typing import Callable
 
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+    async_scoped_session,
+)
 from sqlalchemy.orm import (
-    sessionmaker,
-    Session,
     declarative_base,
-    scoped_session,
 )
 
 
@@ -17,29 +20,31 @@ Base = declarative_base()
 
 class Database:
     def __init__(self, db_url: str) -> None:
-        self._engine = create_engine(db_url, echo=True)
-        self._session_factory = scoped_session(
-            sessionmaker(
+        self._engine = create_async_engine(db_url, future=True, echo=True)
+        self._session_factory = async_scoped_session(
+            async_sessionmaker(
+                class_=AsyncSession,
                 autocommit=False,
                 autoflush=False,
                 bind=self._engine,
             ),
+            scopefunc=asyncio.current_task,
         )
 
     def create_database(self) -> None:
         Base.metadata.create_all(self._engine)
 
-    @contextmanager
-    def session(self) -> Callable[..., AbstractContextManager[Session]]:
-        session: Session = self._session_factory()
+    @asynccontextmanager
+    async def session(self) -> Callable[..., AbstractAsyncContextManager[AsyncSession]]:
+        session: AsyncSession = self._session_factory()
         try:
             yield session
         except Exception as e:
             logger.error(
                 f"Session rollback because of exception - {str(e)}", exc_info=e
             )
-            session.rollback()
+            await session.rollback()
             raise
         finally:
             session.expunge_all()
-            session.close()
+            await session.close()

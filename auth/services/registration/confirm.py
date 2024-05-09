@@ -13,7 +13,7 @@ from utils.shortcuts import get_object_or_404
 
 class IConfirmRegistration(ABC):
     @abstractmethod
-    def __call__(self, entry: ConfirmRegistrationSchema) -> JWTTokensSchema: ...
+    async def __call__(self, entry: ConfirmRegistrationSchema) -> JWTTokensSchema: ...
 
 
 class ConfirmRegistration(IConfirmRegistration):
@@ -27,25 +27,25 @@ class ConfirmRegistration(IConfirmRegistration):
         self.check_code = check_code
         self.repo = repo
 
-    def __call__(self, entry: ConfirmRegistrationSchema) -> JWTTokensSchema:
-        user = self._get_user(entry.email)
+    async def __call__(self, entry: ConfirmRegistrationSchema) -> JWTTokensSchema:
+        user = await self._get_user(entry.email)
         if user.email_confirmed:
             raise Custom400Exception(_("Email is already confirmed"))
-        self._check_code(user, entry.code)
-        self._update_user(user)
+        await self._check_code(user, entry.code)
+        await self._update_user(user)
         return self._create_tokens(user)
 
-    def _get_user(self, email: str) -> UserType:
+    async def _get_user(self, email: str) -> UserType:
         return get_object_or_404(
-            self.repo.get_by_email(email, include_not_confirmed_email=True),
+            await self.repo.get_by_email(email, include_not_confirmed_email=True),
             msg="User not found.",
         )
 
-    def _check_code(self, user: UserType, code: str) -> None:
-        self.check_code(user=user, type=CodeTypeEnum.EMAIL_CONFIRM, code=code)
+    async def _check_code(self, user: UserType, code: str) -> None:
+        await self.check_code(user=user, type=CodeTypeEnum.EMAIL_CONFIRM, code=code)
 
-    def _update_user(self, user: UserType) -> None:
-        self.repo.update(user, values={"email_confirmed": True})
+    async def _update_user(self, user: UserType) -> None:
+        await self.repo.update(user, values={"email_confirmed": True})
 
     def _create_tokens(self, user: UserType) -> JWTTokensSchema:
         return self.create_jwt_tokens(user)

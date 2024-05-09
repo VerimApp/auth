@@ -11,7 +11,7 @@ from utils.exceptions import Custom400Exception
 
 class ICheckCode(ABC):
     @abstractmethod
-    def __call__(
+    async def __call__(
         self,
         user: UserType,
         type: CodeTypeEnum,
@@ -25,7 +25,7 @@ class CheckCode(ICheckCode):
     def __init__(self, repo: ICodeRepo) -> None:
         self.repo = repo
 
-    def __call__(
+    async def __call__(
         self,
         user: UserType,
         type: CodeTypeEnum,
@@ -34,14 +34,16 @@ class CheckCode(ICheckCode):
         raise_exception: bool = True
     ) -> bool:
         return self._is_valid(
-            last_code=self._get_last_code(user, type),
+            last_code=await self._get_last_code(user, type),
             code=code,
             type=type,
             raise_exception=raise_exception,
         )
 
-    def _get_last_code(self, user: UserType, type: CodeTypeEnum) -> CodeType | None:
-        return self.repo.get_last(user.id, type)
+    async def _get_last_code(
+        self, user: UserType, type: CodeTypeEnum
+    ) -> CodeType | None:
+        return await self.repo.get_last(user.id, type)
 
     def _is_valid(
         self,

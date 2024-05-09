@@ -1,13 +1,15 @@
 from abc import ABC
-from contextlib import AbstractContextManager
+from contextlib import AbstractAsyncContextManager
 from typing import Callable
 from dataclasses import fields
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class IRepo(ABC):
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:
+    def __init__(
+        self, session_factory: Callable[..., AbstractAsyncContextManager[AsyncSession]]
+    ) -> None:
         self.session_factory = session_factory
 
 
