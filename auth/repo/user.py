@@ -33,6 +33,8 @@ class UserRepo(IUserRepo):
             email=entry.email.lower(), username=entry.username, password=entry.password
         )
         session.add(user)
+        await session.flush([user])
+        await session.refresh(user)
         return user
 
     @handle_orm_error
@@ -82,8 +84,7 @@ class UserRepo(IUserRepo):
     async def get_by_id(self, session: AsyncSession, id: int) -> User | None:
         qs = await self.all(session, include_not_confirmed_email=True, as_select=True)
         result = await session.execute(qs.filter(self.model.id == id))
-        user = result.first()
-        return user
+        return result.first()
 
     @handle_orm_error
     @row_to_model()

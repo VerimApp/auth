@@ -19,6 +19,8 @@ class CodeRepo(ICodeRepo):
             entry.type = entry.type.value
         code = self.model(**asdict(entry))
         session.add(code)
+        await session.flush([code])
+        await session.refresh(code)
         return code
 
     @handle_orm_error
