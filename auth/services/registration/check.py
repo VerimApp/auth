@@ -1,6 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..repo import IUserRepo
 from utils.types import UserType
 
@@ -10,15 +12,15 @@ logger = logging.getLogger("auth")
 
 class ICheckRegistration(ABC):
     @abstractmethod
-    async def __call__(self, user_id: int) -> bool | None: ...
+    async def __call__(self, session: AsyncSession, user_id: int) -> bool | None: ...
 
 
 class CheckRegistration(ICheckRegistration):
     def __init__(self, repo: IUserRepo) -> None:
         self.repo = repo
 
-    async def __call__(self, user_id: int) -> bool | None:
-        user = await self._get_user(user_id)
+    async def __call__(self, session: AsyncSession, user_id: int) -> bool | None:
+        user = await self._get_user(session, user_id)
         if user is None:
             logger.info(
                 "Registration checking ended up with not found user.",
@@ -39,8 +41,8 @@ class CheckRegistration(ICheckRegistration):
         )
         return True
 
-    async def _get_user(self, user_id: int) -> UserType | None:
-        return await self.repo.get_by_id(user_id)
+    async def _get_user(self, session: AsyncSession, user_id: int) -> UserType | None:
+        return await self.repo.get_by_id(session, user_id)
 
     def _email_confirmed(self, user: UserType) -> bool:
         return user.email_confirmed

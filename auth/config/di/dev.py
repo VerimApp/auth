@@ -53,14 +53,12 @@ class Container(containers.DeclarativeContainer):
     )
     publisher_grpc = providers.Singleton(PublisherStub, connection=_publisher_grpc)
 
-    db = providers.Resource(
-        Database, db_url=settings.DATABASE_URL
-    )
+    db = providers.Resource(Database, db_url=settings.DATABASE_URL)
 
     send_email = providers.Singleton(SendEmail, celery_app=celery_app)
 
-    user_repo = providers.Factory(UserRepo, session_factory=db.provided.session)
-    _code_repo = providers.Factory(CodeRepo, session_factory=db.provided.session)
+    user_repo = providers.Factory(UserRepo)
+    _code_repo = providers.Factory(CodeRepo)
 
     authenticate = providers.Singleton(Authenticate, repo=user_repo)
 

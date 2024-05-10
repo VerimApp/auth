@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
 from config.i18n import _
@@ -19,7 +20,7 @@ logger = logging.getLogger("auth")
 class IAuthenticate(ABC):
     @abstractmethod
     async def __call__(
-        self, token: str | bytes, *, access: bool = True
+        self, session: AsyncSession, token: str | bytes, *, access: bool = True
     ) -> UserType: ...
 
 
@@ -27,10 +28,12 @@ class Authenticate(IAuthenticate):
     def __init__(self, repo: IUserRepo):
         self.repo = repo
 
-    async def __call__(self, token: str | bytes, *, access: bool = True) -> UserType:
+    async def __call__(
+        self, session: AsyncSession, token: str | bytes, *, access: bool = True
+    ) -> UserType:
         payload = self._decode_payload(token, access)
         payload = self._payload_to_dataclass(payload)
-        user = await self._get_user(payload.user)
+        user = await self._get_user(session, payload.user)
         self._check_tokens_revoked(user, payload)
         self._check_user_active(user)
         return user
@@ -56,8 +59,8 @@ class Authenticate(IAuthenticate):
             )
             raise Custom401Exception(_("Token is not correct."))
 
-    async def _get_user(self, user_id: int) -> UserType:
-        user: UserType = await self.repo.get_by_id(user_id)
+    async def _get_user(self, session: AsyncSession, user_id: int) -> UserType:
+        user: UserType = await self.repo.get_by_id(session, user_id)
         if not user:
             raise Custom401Exception(_("Token is not correct."))
         return user

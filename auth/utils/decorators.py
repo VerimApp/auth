@@ -93,3 +93,14 @@ def row_to_model(wrapper_dataclass: Dataclass | None = None):
         return inner
 
     return outer
+
+
+def inject_session(func):
+    async def wrapper(*args, **kwargs):
+        from config.di import Container
+
+        async with Container.db().session() as session:
+            kwargs["session"] = session
+            return await func(*args, **kwargs)
+
+    return wrapper

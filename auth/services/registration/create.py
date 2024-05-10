@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 from celery import Celery
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..validators import IValidate
 from ..password import IHashPassword
@@ -17,7 +18,9 @@ from utils.time import get_current_time_with_delta
 
 class IRegisterUser(ABC):
     @abstractmethod
-    async def __call__(self, entry: RegistrationSchema) -> CodeSentSchema | str: ...
+    async def __call__(
+        self, session: AsyncSession, entry: RegistrationSchema
+    ) -> CodeSentSchema | str: ...
 
 
 class RegisterUser(IRegisterUser):
@@ -37,21 +40,27 @@ class RegisterUser(IRegisterUser):
         self.repo = repo
         self.celery_app = celery_app
 
-    async def __call__(self, entry: RegistrationSchema) -> CodeSentSchema | str:
-        await self._validate_email(entry)
-        await self._validate_username(entry)
+    async def __call__(
+        self, session: AsyncSession, entry: RegistrationSchema
+    ) -> CodeSentSchema | str:
+        await self._validate_email(session, entry)
+        await self._validate_username(session, entry)
         self._validate_password(entry)
         entry.password = self._hash_password(entry)
-        user = await self._create_user(entry)
+        user = await self._create_user(session, entry)
         self._send_registration_check_task(user)
-        return await self._create_code(user)
+        return await self._create_code(session, user)
 
-    async def _validate_email(self, entry: RegistrationSchema) -> None:
-        if await self.repo.email_exists(entry.email):
+    async def _validate_email(
+        self, session: AsyncSession, entry: RegistrationSchema
+    ) -> None:
+        if await self.repo.email_exists(session, entry.email):
             raise Custom400Exception(_("Email is already taken."))
 
-    async def _validate_username(self, entry: RegistrationSchema) -> None:
-        if await self.repo.username_exists(entry.username):
+    async def _validate_username(
+        self, session: AsyncSession, entry: RegistrationSchema
+    ) -> None:
+        if await self.repo.username_exists(session, entry.username):
             raise Custom400Exception(_("Username is already taken."))
         self.validate_username(entry.username, raise_exception=True)
 
@@ -60,8 +69,10 @@ class RegisterUser(IRegisterUser):
             raise Custom400Exception(_("Password mismatch."))
         self.validate_password(entry.password, raise_exception=True)
 
-    async def _create_user(self, entry: RegistrationSchema) -> UserType:
-        return await self.repo.create(entry)
+    async def _create_user(
+        self, session: AsyncSession, entry: RegistrationSchema
+    ) -> UserType:
+        return await self.repo.create(session, entry)
 
     def _hash_password(self, entry: RegistrationSchema) -> str:
         return self.hash_password(entry.password)
@@ -73,5 +84,9 @@ class RegisterUser(IRegisterUser):
             eta=get_current_time_with_delta(seconds=CONFIRM_EMAIL_CHECK_DELAY),
         )
 
-    async def _create_code(self, user: UserType) -> CodeSentSchema | str:
-        return await self.create_code(user, CodeTypeEnum.EMAIL_CONFIRM, send=True)
+    async def _create_code(
+        self, session: AsyncSession, user: UserType
+    ) -> CodeSentSchema | str:
+        return await self.create_code(
+            session, user, CodeTypeEnum.EMAIL_CONFIRM, send=True
+        )

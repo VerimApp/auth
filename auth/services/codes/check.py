@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from .types import CodeType, CodeTypeEnum
 from .repo import ICodeRepo
 from config import settings
@@ -13,6 +15,7 @@ class ICheckCode(ABC):
     @abstractmethod
     async def __call__(
         self,
+        session: AsyncSession,
         user: UserType,
         type: CodeTypeEnum,
         code: str,
@@ -27,6 +30,7 @@ class CheckCode(ICheckCode):
 
     async def __call__(
         self,
+        session: AsyncSession,
         user: UserType,
         type: CodeTypeEnum,
         code: str,
@@ -34,16 +38,16 @@ class CheckCode(ICheckCode):
         raise_exception: bool = True
     ) -> bool:
         return self._is_valid(
-            last_code=await self._get_last_code(user, type),
+            last_code=await self._get_last_code(session, user, type),
             code=code,
             type=type,
             raise_exception=raise_exception,
         )
 
     async def _get_last_code(
-        self, user: UserType, type: CodeTypeEnum
+        self, session: AsyncSession, user: UserType, type: CodeTypeEnum
     ) -> CodeType | None:
-        return await self.repo.get_last(user.id, type)
+        return await self.repo.get_last(session, user.id, type)
 
     def _is_valid(
         self,

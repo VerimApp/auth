@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from config.i18n import _
 from schemas import LoginSchema, JWTTokensSchema
 from .jwt import CreateJWTTokens
@@ -12,7 +14,9 @@ from utils.shortcuts import get_object_or_404
 
 class ILoginUser(ABC):
     @abstractmethod
-    async def __call__(self, entry: LoginSchema) -> JWTTokensSchema: ...
+    async def __call__(
+        self, session: AsyncSession, entry: LoginSchema
+    ) -> JWTTokensSchema: ...
 
 
 class LoginUser(ILoginUser):
@@ -26,14 +30,16 @@ class LoginUser(ILoginUser):
         self.check_password = check_password
         self.repo = repo
 
-    async def __call__(self, entry: LoginSchema) -> JWTTokensSchema:
-        user = await self._get_user_by_login(entry.login)
+    async def __call__(
+        self, session: AsyncSession, entry: LoginSchema
+    ) -> JWTTokensSchema:
+        user = await self._get_user_by_login(session, entry.login)
         self._check_password(user, entry.password)
         return self._make_tokens(user)
 
-    async def _get_user_by_login(self, login: str) -> UserType:
+    async def _get_user_by_login(self, session: AsyncSession, login: str) -> UserType:
         return get_object_or_404(
-            await self.repo.get_by_login(login), msg="User not found."
+            await self.repo.get_by_login(session, login), msg="User not found."
         )
 
     def _check_password(self, user: UserType, password: str) -> None:

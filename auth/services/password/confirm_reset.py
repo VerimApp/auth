@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from ..codes import ICheckCode
 from ..repo import IUserRepo
 from ..validators import IValidate
@@ -14,7 +16,9 @@ from utils.exceptions import Custom400Exception
 
 class IConfirmResetPassword(ABC):
     @abstractmethod
-    async def __call__(self, entry: ResetPasswordConfirmSchema) -> None: ...
+    async def __call__(
+        self, session: AsyncSession, entry: ResetPasswordConfirmSchema
+    ) -> None: ...
 
 
 class ConfirmResetPassword(IConfirmResetPassword):
@@ -32,19 +36,25 @@ class ConfirmResetPassword(IConfirmResetPassword):
         self.check_password = check_password
         self.repo = repo
 
-    async def __call__(self, entry: ResetPasswordConfirmSchema) -> None:
-        user = await self._get_user(entry)
-        await self._check_code(user, entry.code)
+    async def __call__(
+        self, session: AsyncSession, entry: ResetPasswordConfirmSchema
+    ) -> None:
+        user = await self._get_user(session, entry)
+        await self._check_code(session, user, entry.code)
         self._validate_password(user, entry)
-        await self._set_password(user, entry.new_password)
+        await self._set_password(session, user, entry.new_password)
 
-    async def _get_user(self, entry: ResetPasswordConfirmSchema) -> UserType:
+    async def _get_user(
+        self, session: AsyncSession, entry: ResetPasswordConfirmSchema
+    ) -> UserType:
         return get_object_or_404(
-            await self.repo.get_by_email(entry.email), msg="User not found."
+            await self.repo.get_by_email(session, entry.email), msg="User not found."
         )
 
-    async def _check_code(self, user: UserType, code: str) -> None:
-        await self.check_code(user, CodeTypeEnum.RESET_PASSWORD, code)
+    async def _check_code(
+        self, session: AsyncSession, user: UserType, code: str
+    ) -> None:
+        await self.check_code(session, user, CodeTypeEnum.RESET_PASSWORD, code)
 
     def _validate_password(
         self, user: UserType, entry: ResetPasswordConfirmSchema
@@ -55,9 +65,11 @@ class ConfirmResetPassword(IConfirmResetPassword):
             raise Custom400Exception(_("New pasword must be different from old one."))
         self.validate_password(entry.new_password, raise_exception=True)
 
-    async def _set_password(self, user: UserType, password: str) -> None:
+    async def _set_password(
+        self, session: AsyncSession, user: UserType, password: str
+    ) -> None:
         await self.repo.update(
-            user=user, values={"password": self._hash_password(password)}
+            session, user=user, values={"password": self._hash_password(password)}
         )
 
     def _hash_password(self, password: str) -> str:
